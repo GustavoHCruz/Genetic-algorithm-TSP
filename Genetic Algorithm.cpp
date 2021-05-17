@@ -1,15 +1,16 @@
-#include <iostream> // I/O Library
-#include <vector>   // Vectors Structure
-#include <stdlib.h> // Randomizer
-#include <time.h>   // Time
-#include <assert.h> // Assertion Library
+#include <iostream>
+#include <vector>
+#include <stdlib.h>
+#include <time.h>
+#include <assert.h>
 #include <math.h>
+#include <algorithm>
 
-#define population_length 5
-#define mutation_rate 0.01
-#define generations_limit 300
-#define generations_stagnant 20
-#define time_limit 1000
+#define population_length 10
+#define mutation_rate 10
+#define generations_limit 1000000
+int stagnant_counter = 0;
+#define generations_stagnant 1000000
 
 using namespace std;
 
@@ -93,7 +94,7 @@ float calculate_total_cost(vector<vertex> v)
 {
     float total = 0;
 
-    for (int i = 0; i < v.size()-1; i++)
+    for (int i = 0; i < v.size() - 1; i++)
         total += calculate_cost(v.at(i), v.at(i + 1));
 
     return total;
@@ -118,14 +119,102 @@ void create(genetic_structure *g)
     }
 }
 
+bool solution_compare(solution a, solution b)
+{
+    return a.solution_cost < b.solution_cost;
+}
+
+// Ranking Selection
+void select(genetic_structure *g, solution *parent1, solution *parent2)
+{
+    vector<solution> aux;
+    for (int i = 0; i < population_length; i++)
+    {
+        aux.push_back(g->population[i]);
+    }
+
+    sort(aux.begin(), aux.end(), solution_compare);
+
+    *parent1 = aux[0];
+    *parent2 = aux[1];
+}
+
+solution crossover(solution parent1, solution parent2)
+{
+    solution child;
+    vector<vertex> aux;
+    int cut = parent1.vertexs.size() / 2;
+
+    for (int i = 0; i < cut; i++)
+    {
+        aux.push_back(parent1.vertexs.at(i));
+    }
+
+    vertex v;
+    int i = 0;
+    bool exist;
+    while (aux.size() < parent1.vertexs.size())
+    {
+        exist = false;
+        v = parent2.vertexs[i++];
+        for (vertex x : aux)
+        {
+            if (v.name == x.name)
+                exist = true;
+        }
+        if (!exist)
+            aux.push_back(v);
+    }
+    child.vertexs = aux;
+    child.solution_cost = calculate_total_cost(aux);
+
+    return child;
+}
+
+void mutation(solution *child)
+{
+    int aux = rand() % 10000 + 1;
+    if (aux <= mutation_rate * 100)
+    {
+        int a = rand() % child->vertexs.size();
+        int b = rand() % child->vertexs.size();
+        vertex temp = child->vertexs.at(a);
+        child->vertexs.at(a) = child->vertexs.at(b);
+        child->vertexs.at(b) = temp;
+    }
+}
+
+void update(genetic_structure *g, solution child)
+{
+    sort(g->population.begin(), g->population.end(), solution_compare);
+
+    if (child.solution_cost < g->population[g->population.size() - 1].solution_cost)
+    {
+        stagnant_counter = 0;
+        g->population.pop_back();
+        g->population.push_back(child);
+    }
+    stagnant_counter++;
+}
+
 solution genetic_algorithm(vector<vertex> entry)
 {
     genetic_structure g;
+    solution parent1, parent2, child;
     g.vertexs = entry;
+
     create(&g);
 
-    solution s;
-    return s;
+    //for (int generations = 0; generations < generations_limit; generations++)
+    while(stagnant_counter < generations_stagnant)
+    {
+        select(&g, &parent1, &parent2);
+        child = crossover(parent1, parent2);
+        mutation(&child);
+        update(&g, child);
+    }
+
+    return g.population.at(0);
 }
 
 main()
@@ -133,4 +222,11 @@ main()
     srand(time(NULL));
     vector<vertex> entry = read_entry();
     solution s = genetic_algorithm(entry);
+    cout << s.solution_cost;
+
+    //for(vertex v : s.vertexs)
+    //{
+    //    cout << "Name:" << v.name;
+    //    cout << " --- [" << v.x << "," << v.y << "]" << endl; 
+    //}
 }
