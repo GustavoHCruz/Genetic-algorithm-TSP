@@ -193,8 +193,36 @@ void update(genetic_structure *g, solution child)
         stagnant_counter = 0;
         g->population.pop_back();
         g->population.push_back(child);
+        sort(g->population.begin(), g->population.end(), solution_compare);
     }
     stagnant_counter++;
+}
+
+vector<solution> generate_neighborhood(genetic_structure *g)
+{
+    int i = g->population.at(0).vertexs.size() / 3;
+    int j = i * 2 + (i / 2);
+    vector<solution> neighborhood;
+    solution aux;
+    for (solution s : g->population)
+    {
+        aux.vertexs.clear();
+        for (int n = 0; n < i; n++)
+            aux.vertexs.push_back(s.vertexs[n]);
+        for (int n = j; n >= i; n--)
+            aux.vertexs.push_back(s.vertexs[n]);
+        for (int n = j + 1; n < s.vertexs.size(); n++)
+            aux.vertexs.push_back(s.vertexs[n]);
+        aux.solution_cost = calculate_total_cost(aux.vertexs);
+        neighborhood.push_back(aux);
+    }
+    return neighborhood;
+}
+
+void search(genetic_structure *g)
+{
+    vector<solution> neighborhood = generate_neighborhood(g);
+    
 }
 
 solution genetic_algorithm(vector<vertex> entry)
@@ -206,13 +234,14 @@ solution genetic_algorithm(vector<vertex> entry)
     create(&g);
 
     //for (int generations = 0; generations < generations_limit; generations++)
-    while(stagnant_counter < generations_stagnant)
-    {
+    //while (stagnant_counter < generations_stagnant)
+    //{
         select(&g, &parent1, &parent2);
         child = crossover(parent1, parent2);
         mutation(&child);
         update(&g, child);
-    }
+        search(&g);
+    //}
 
     return g.population.at(0);
 }
@@ -227,6 +256,6 @@ main()
     //for(vertex v : s.vertexs)
     //{
     //    cout << "Name:" << v.name;
-    //    cout << " --- [" << v.x << "," << v.y << "]" << endl; 
+    //    cout << " --- [" << v.x << "," << v.y << "]" << endl;
     //}
 }
