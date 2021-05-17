@@ -6,9 +6,8 @@
 #include <math.h>
 #include <algorithm>
 
-#define population_length 10
+#define population_length 20
 #define mutation_rate 10
-#define generations_limit 1000000
 int stagnant_counter = 0;
 #define generations_stagnant 1000000
 
@@ -127,16 +126,10 @@ bool solution_compare(solution a, solution b)
 // Ranking Selection
 void select(genetic_structure *g, solution *parent1, solution *parent2)
 {
-    vector<solution> aux;
-    for (int i = 0; i < population_length; i++)
-    {
-        aux.push_back(g->population[i]);
-    }
-
-    sort(aux.begin(), aux.end(), solution_compare);
-
-    *parent1 = aux[0];
-    *parent2 = aux[1];
+    int i = rand() % g->population.size();
+    *parent1 = g->population[i];
+    i = rand() % g->population.size();
+    *parent2 = g->population[i];
 }
 
 solution crossover(solution parent1, solution parent2)
@@ -187,6 +180,7 @@ void mutation(solution *child)
 void update(genetic_structure *g, solution child)
 {
     sort(g->population.begin(), g->population.end(), solution_compare);
+    g->population.erase(g->population.begin()+population_length,g->population.end());
 
     if (child.solution_cost < g->population[g->population.size() - 1].solution_cost)
     {
@@ -198,10 +192,10 @@ void update(genetic_structure *g, solution child)
     stagnant_counter++;
 }
 
-vector<solution> generate_neighborhood(genetic_structure *g)
+void generate_neighborhood(genetic_structure *g)
 {
-    int i = g->population.at(0).vertexs.size() / 3;
-    int j = i * 2 + (i / 2);
+    int i = rand() % (g->population.at(0).vertexs.size()/3);
+    int j = (rand() % g->population.at(0).vertexs.size()) + ((2*(g->population.at(0).vertexs.size() / 3)) / 2);
     vector<solution> neighborhood;
     solution aux;
     for (solution s : g->population)
@@ -216,13 +210,8 @@ vector<solution> generate_neighborhood(genetic_structure *g)
         aux.solution_cost = calculate_total_cost(aux.vertexs);
         neighborhood.push_back(aux);
     }
-    return neighborhood;
-}
-
-void search(genetic_structure *g)
-{
-    vector<solution> neighborhood = generate_neighborhood(g);
-    
+    for (solution s : neighborhood)
+        g->population.push_back(s);
 }
 
 solution genetic_algorithm(vector<vertex> entry)
@@ -233,15 +222,14 @@ solution genetic_algorithm(vector<vertex> entry)
 
     create(&g);
 
-    //for (int generations = 0; generations < generations_limit; generations++)
-    //while (stagnant_counter < generations_stagnant)
-    //{
+    while (stagnant_counter < generations_stagnant)
+    {
         select(&g, &parent1, &parent2);
         child = crossover(parent1, parent2);
         mutation(&child);
+        generate_neighborhood(&g);
         update(&g, child);
-        search(&g);
-    //}
+    }
 
     return g.population.at(0);
 }
@@ -252,10 +240,4 @@ main()
     vector<vertex> entry = read_entry();
     solution s = genetic_algorithm(entry);
     cout << s.solution_cost;
-
-    //for(vertex v : s.vertexs)
-    //{
-    //    cout << "Name:" << v.name;
-    //    cout << " --- [" << v.x << "," << v.y << "]" << endl;
-    //}
 }
