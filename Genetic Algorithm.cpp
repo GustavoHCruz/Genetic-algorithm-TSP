@@ -5,6 +5,7 @@
 #include <assert.h>
 #include <math.h>
 #include <algorithm>
+#include <fstream>
 
 #define population_length 20
 #define mutation_rate 10
@@ -68,16 +69,25 @@ vertex split(string entry, char separator)
 
 vector<vertex> read_entry()
 {
+    string file_name;
+    cin >> file_name;
+    ifstream tsp(file_name);
+    if(tsp.fail()){
+        cout << "File not found";
+        exit(1);
+    }
     vector<vertex> answer;
     string in;
 
-    for (int i = 0; i < 7; i++)
-        getline(cin, in);
+    getline(tsp,in);
+    while(in != "NODE_COORD_SECTION")
+        getline(tsp, in);
+    getline(tsp,in);
 
     while (in != "EOF")
     {
         answer.push_back(split(in, ' '));
-        getline(cin, in);
+        getline(tsp, in);
     }
     setbuf(stdin, NULL);
 
@@ -93,7 +103,7 @@ float calculate_total_cost(vector<vertex> v)
 {
     float total = 0;
 
-    for (int i = 0; i < v.size() - 1; i++)
+    for (unsigned int i = 0; i < v.size() - 1; i++)
         total += calculate_cost(v.at(i), v.at(i + 1));
 
     return total;
@@ -195,7 +205,7 @@ void update(genetic_structure *g, solution child)
 void generate_neighborhood(genetic_structure *g)
 {
     int i = rand() % (g->population.at(0).vertexs.size()/3);
-    int j = (rand() % g->population.at(0).vertexs.size()) + ((2*(g->population.at(0).vertexs.size() / 3)) / 2);
+    int j = rand() % (2*g->population.at(0).vertexs.size()/3) + (g->population.at(0).vertexs.size() / 3);
     vector<solution> neighborhood;
     solution aux;
     for (solution s : g->population)
@@ -205,7 +215,7 @@ void generate_neighborhood(genetic_structure *g)
             aux.vertexs.push_back(s.vertexs[n]);
         for (int n = j; n >= i; n--)
             aux.vertexs.push_back(s.vertexs[n]);
-        for (int n = j + 1; n < s.vertexs.size(); n++)
+        for (unsigned int n = j + 1; n < s.vertexs.size(); n++)
             aux.vertexs.push_back(s.vertexs[n]);
         aux.solution_cost = calculate_total_cost(aux.vertexs);
         neighborhood.push_back(aux);
