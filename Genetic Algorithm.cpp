@@ -2,7 +2,6 @@
 #include <vector>
 #include <stdlib.h>
 #include <time.h>
-#include <assert.h>
 #include <math.h>
 #include <algorithm>
 #include <fstream>
