@@ -184,6 +184,7 @@ void mutation(solution *child)
         vertex temp = child->vertexs.at(a);
         child->vertexs.at(a) = child->vertexs.at(b);
         child->vertexs.at(b) = temp;
+        child->solution_cost = calculate_total_cost(child->vertexs);
     }
 }
 
@@ -244,7 +245,7 @@ solution genetic_algorithm(vector<vertex> entry)
     return g.population.at(0);
 }
 
-main()
+int main()
 {
     srand(time(NULL));
     vector<vertex> entry = read_entry();
